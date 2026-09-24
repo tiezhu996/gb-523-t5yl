@@ -59,6 +59,29 @@ type ZoneThermalResult struct {
 	CoolingMarginKW    float64 `json:"cooling_margin_kw"`
 }
 
+// InputChange describes one rack, zone or load that differs between the
+// evaluation snapshot and the current planning inputs.
+type InputChange struct {
+	EntityType string `json:"entity_type"`
+	EntityID   uint   `json:"entity_id"`
+	Code       string `json:"code"`
+	ChangeType string `json:"change_type"`
+	Field      string `json:"field"`
+	OldValue   string `json:"old_value"`
+	NewValue   string `json:"new_value"`
+	Detail     string `json:"detail"`
+}
+
+// InputFreshness reports whether an evaluated scenario is still based on the
+// current racks, thermal zones and equipment loads.
+type InputFreshness struct {
+	Evaluated      bool          `json:"evaluated"`
+	Stale          bool          `json:"stale"`
+	ChangeCount    int           `json:"change_count"`
+	Changes        []InputChange `json:"changes"`
+	WarningMessage string        `json:"warning_message"`
+}
+
 type ScenarioResponse struct {
 	ID                   uint                     `json:"id"`
 	Name                 string                   `json:"name"`
@@ -74,6 +97,7 @@ type ScenarioResponse struct {
 	CreatedBy            uint                     `json:"created_by"`
 	ApprovedBy           *uint                    `json:"approved_by"`
 	HasCriticalViolation bool                     `json:"has_critical_violation"`
+	InputFreshness       *InputFreshness          `json:"input_freshness,omitempty"`
 }
 
 type ScenarioComparison struct {

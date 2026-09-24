@@ -43,6 +43,14 @@ func (r *EquipmentLoadRepository) List(ctx context.Context, search, status strin
 	return loads, total, nil
 }
 
+func (r *EquipmentLoadRepository) All(ctx context.Context) ([]model.EquipmentLoad, error) {
+	var loads []model.EquipmentLoad
+	if err := r.db.WithContext(ctx).Order("id ASC").Find(&loads).Error; err != nil {
+		return nil, fmt.Errorf("list all equipment loads: %w", err)
+	}
+	return loads, nil
+}
+
 func (r *EquipmentLoadRepository) AllReady(ctx context.Context) ([]model.EquipmentLoad, error) {
 	var loads []model.EquipmentLoad
 	if err := r.db.WithContext(ctx).Where("load_status = ?", "ready").Order("id ASC").Find(&loads).Error; err != nil {

@@ -1,5 +1,27 @@
 export type ScenarioStatus = 'draft' | 'evaluating' | 'pending_review' | 'approved' | 'archived';
 
+export type InputEntityType = 'thermal_zone' | 'rack' | 'equipment_load';
+export type InputChangeType = 'added' | 'removed' | 'updated';
+
+export interface InputChange {
+  entity_type: InputEntityType;
+  entity_id: number;
+  code: string;
+  change_type: InputChangeType;
+  field: string;
+  old_value: string;
+  new_value: string;
+  detail: string;
+}
+
+export interface InputFreshness {
+  evaluated: boolean;
+  stale: boolean;
+  change_count: number;
+  changes: InputChange[];
+  warning_message: string;
+}
+
 export interface ConstraintViolation {
   code: string;
   severity: 'critical' | 'warning';
@@ -50,6 +72,7 @@ export interface LayoutScenario {
   created_by: number;
   approved_by: number | null;
   has_critical_violation: boolean;
+  input_freshness?: InputFreshness;
 }
 
 export interface ScenarioComparison {
