@@ -8,7 +8,7 @@ import { errorInterceptor } from './api/error.interceptor';
 import {
   AlertTriangle, Archive, Boxes, CheckCheck, CheckCircle2, Cpu, Edit3, GitCompareArrows,
   LayoutGrid, LockKeyhole, LogIn, LogOut, LucideAngularModule, Play, Plus, RefreshCw,
-  Save, ServerCog, ShieldCheck, Thermometer, Wind, X, Zap
+  RotateCcw, Save, ServerCog, ShieldCheck, Thermometer, Wind, X, Zap
 } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
@@ -18,7 +18,7 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     importProvidersFrom(LucideAngularModule.pick({
       AlertTriangle, Archive, Boxes, CheckCheck, CheckCircle2, Cpu, Edit3, GitCompareArrows,
-      LayoutGrid, LockKeyhole, LogIn, LogOut, Play, Plus, RefreshCw, Save, ServerCog,
+      LayoutGrid, LockKeyhole, LogIn, LogOut, Play, Plus, RefreshCw, RotateCcw, Save, ServerCog,
       ShieldCheck, Thermometer, Wind, X, Zap
     }))
   ]

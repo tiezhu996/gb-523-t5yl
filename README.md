@@ -39,6 +39,10 @@ docker compose down -v --remove-orphans
 - `/planner`：选择负载创建草稿，执行确定性候选布局，查看逐机柜结果、热传播、评分和约束证据。
 - `/audit`：处理待复核方案、比较两个评估版本、检索带 request ID 的审计事件。
 
+### 评估快照与“输入已变化”防护
+
+评估时服务端保存完整输入快照（全部热区、全部机柜、方案所选负载及算法版本）。评估后规划员修改机柜、热区或负载，方案列表、规划详情与审计页会显示红色“输入已变化”横幅，逐条写明变化的是哪个机柜/热区/负载以及变更字段（新增、移除或修改），版本比较中也会标注过期一侧。复核员此时无法点击批准；即使绕过前端，服务端在批准事务内仍会按评估快照重新读取当前输入再核对一次，发现漂移就返回 `422 SCENARIO_INPUTS_CHANGED` 并在审计中记录 `layout_scenario.approve.blocked`。复核员可将方案退回 draft，规划员重新评估后横幅消失，旧评估结果仍保留并可在版本比较中与当前结果对照。
+
 布局算法先按负载对可用机柜的约束紧度排序，再按容量余量、邻接热惩罚、热点惩罚、保留机柜惩罚和偏好奖励评分；评分相同时按机柜编码排序。相同输入快照与算法版本会得到相同结果。无法放置的负载会返回 `LOAD_UNPLACED` 及候选约束证据，不会静默忽略。
 
 ## 技术栈
@@ -118,7 +122,7 @@ output/                     验收报告与 Browser 截图
 | `POST /api/v1/loads/validate` | 批量校验 ready 输入 |
 | `GET/POST /api/v1/scenarios` | 方案查询与创建 |
 | `POST /api/v1/scenarios/:id/evaluate` | 版本校验后执行规划 |
-| `POST /api/v1/scenarios/:id/transition` | 复核、批准或归档状态流 |
+| `POST /api/v1/scenarios/:id/transition` | 复核、批准或归档状态流；批准时事务内按评估快照复核输入，漂移返回 `SCENARIO_INPUTS_CHANGED` |
 | `GET /api/v1/scenarios/:id/compare?right_id=` | 比较两个方案 |
 | `GET /api/v1/audit-events` | 审计检索 |
 | `GET /healthz`、`GET /readyz` | 存活与数据库就绪检查 |
@@ -160,7 +164,7 @@ go test ./backend/...
 
 - `JWT_SECRET must contain at least 32 characters`：替换 `.env` 中的密钥并重启后端。
 - 前端返回 502：检查 `docker compose ps`，确认 `db` 和 `backend` 均为 healthy。
-- 方案无法批准：在规划页或审计页查看 `critical` 约束；修改输入后退回 draft 并重新评估。
+- 方案无法批准：在规划页或审计页查看 `critical` 约束；修改输入后退回 draft 并重新评估。若提示 `SCENARIO_INPUTS_CHANGED`，说明机柜、热区或负载在评估后被改动，先退回 draft 重新评估再批准。
 - 更新机柜或方案返回 409：数据版本已变化，刷新后基于最新 `version` 再提交。
 - 端口冲突：只修改 `.env` 中三个主机端口，容器端口保持不变。
 

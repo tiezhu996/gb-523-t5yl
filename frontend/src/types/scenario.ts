@@ -35,6 +35,17 @@ export interface ZoneThermalResult {
   cooling_margin_kw: number;
 }
 
+export type InputChangeType = 'added' | 'removed' | 'modified';
+
+export interface InputChange {
+  entity_type: 'thermal_zone' | 'rack' | 'equipment_load' | 'algorithm';
+  entity_id: number;
+  entity_code: string;
+  change_type: InputChangeType;
+  changed_fields?: string[];
+  description: string;
+}
+
 export interface LayoutScenario {
   id: number;
   name: string;
@@ -50,6 +61,9 @@ export interface LayoutScenario {
   created_by: number;
   approved_by: number | null;
   has_critical_violation: boolean;
+  inputs_fresh: boolean;
+  inputs_changed_since_evaluation: boolean;
+  input_changes: InputChange[];
 }
 
 export interface ScenarioComparison {

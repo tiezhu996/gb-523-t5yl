@@ -59,21 +59,33 @@ type ZoneThermalResult struct {
 	CoolingMarginKW    float64 `json:"cooling_margin_kw"`
 }
 
+type InputChange struct {
+	EntityType    string   `json:"entity_type"`
+	EntityID      uint     `json:"entity_id"`
+	EntityCode    string   `json:"entity_code"`
+	ChangeType    string   `json:"change_type"`
+	ChangedFields []string `json:"changed_fields,omitempty"`
+	Description   string   `json:"description"`
+}
+
 type ScenarioResponse struct {
-	ID                   uint                     `json:"id"`
-	Name                 string                   `json:"name"`
-	ScenarioStatus       constants.ScenarioStatus `json:"scenario_status"`
-	Assignments          []RackAssignment         `json:"assignments"`
-	ZoneResults          []ZoneThermalResult      `json:"zone_results"`
-	Violations           []ConstraintViolation    `json:"violations"`
-	TotalPowerKW         float64                  `json:"total_power_kw"`
-	PeakTempC            float64                  `json:"peak_temp_c"`
-	Score                float64                  `json:"score"`
-	Version              uint                     `json:"version"`
-	AlgorithmVersion     string                   `json:"algorithm_version"`
-	CreatedBy            uint                     `json:"created_by"`
-	ApprovedBy           *uint                    `json:"approved_by"`
-	HasCriticalViolation bool                     `json:"has_critical_violation"`
+	ID                     uint                     `json:"id"`
+	Name                   string                   `json:"name"`
+	ScenarioStatus         constants.ScenarioStatus `json:"scenario_status"`
+	Assignments            []RackAssignment         `json:"assignments"`
+	ZoneResults            []ZoneThermalResult      `json:"zone_results"`
+	Violations             []ConstraintViolation    `json:"violations"`
+	TotalPowerKW           float64                  `json:"total_power_kw"`
+	PeakTempC              float64                  `json:"peak_temp_c"`
+	Score                  float64                  `json:"score"`
+	Version                uint                     `json:"version"`
+	AlgorithmVersion       string                   `json:"algorithm_version"`
+	CreatedBy              uint                     `json:"created_by"`
+	ApprovedBy             *uint                    `json:"approved_by"`
+	HasCriticalViolation   bool                     `json:"has_critical_violation"`
+	InputsFresh            bool                     `json:"inputs_fresh"`
+	InputsChangedSinceEval bool                     `json:"inputs_changed_since_evaluation"`
+	InputChanges           []InputChange            `json:"input_changes"`
 }
 
 type ScenarioComparison struct {
@@ -109,6 +121,7 @@ func DecodeScenario(value model.LayoutScenario) ScenarioResponse {
 		Score: value.Score, Version: value.Version, AlgorithmVersion: value.AlgorithmVersion,
 		CreatedBy: value.CreatedBy, ApprovedBy: value.ApprovedBy,
 		Assignments: []RackAssignment{}, ZoneResults: []ZoneThermalResult{}, Violations: []ConstraintViolation{},
+		InputChanges: []InputChange{},
 	}
 	_ = json.Unmarshal([]byte(value.RackAssignmentsJSON), &response.Assignments)
 	_ = json.Unmarshal([]byte(value.ZoneResultsJSON), &response.ZoneResults)

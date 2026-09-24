@@ -34,7 +34,7 @@ func Open(cfg config.Config) (*gorm.DB, error) {
 		return nil, fmt.Errorf("open %s database: %w", cfg.DBDriver, err)
 	}
 	if cfg.DBAutoMigrate {
-		if err := migrate(db); err != nil {
+		if err := Migrate(db); err != nil {
 			return nil, err
 		}
 		if err := seed(db); err != nil {
@@ -42,6 +42,12 @@ func Open(cfg config.Config) (*gorm.DB, error) {
 		}
 	}
 	return db, nil
+}
+
+// Migrate runs all table migrations. It is exported so transactional service
+// tests can build an isolated schema without the production seed data.
+func Migrate(db *gorm.DB) error {
+	return migrate(db)
 }
 
 func migrate(db *gorm.DB) error {

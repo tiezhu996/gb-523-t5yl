@@ -131,8 +131,32 @@ func (r *LayoutScenarioRepository) FinishEvaluation(ctx context.Context, scenari
 	})
 }
 
-func (r *LayoutScenarioRepository) Transition(ctx context.Context, scenario model.LayoutScenario, target constants.ScenarioStatus, actorID uint, entry audit.Entry) error {
+// GuardRepositories exposes entity repositories bound to the transition
+// transaction so the approval guard can re-read current inputs without taking
+// a separate (racy) connection.
+type GuardRepositories struct {
+	Zones *ThermalZoneRepository
+	Racks *RackRepository
+	Loads *EquipmentLoadRepository
+}
+
+// TransitionGuard runs inside the transition transaction. Returning an
+// AppError rolls the status change back (used to reject approvals whose
+// evaluation snapshot no longer matches current inputs).
+type TransitionGuard func(repos *GuardRepositories) error
+
+func (r *LayoutScenarioRepository) Transition(ctx context.Context, scenario model.LayoutScenario, target constants.ScenarioStatus, actorID uint, entry audit.Entry, guard TransitionGuard) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if guard != nil {
+			txRepos := &GuardRepositories{
+				Zones: NewThermalZoneRepository(tx, r.audit),
+				Racks: NewRackRepository(tx, r.audit),
+				Loads: NewEquipmentLoadRepository(tx, r.audit),
+			}
+			if err := guard(txRepos); err != nil {
+				return err
+			}
+		}
 		updates := map[string]any{"scenario_status": target, "version": gorm.Expr("version + 1")}
 		if target == constants.ScenarioApproved {
 			updates["approved_by"] = actorID
@@ -151,4 +175,10 @@ func (r *LayoutScenarioRepository) Transition(ctx context.Context, scenario mode
 		entry.AfterSummary = string(target)
 		return r.audit.RecordWithDB(ctx, tx, entry)
 	})
+}
+
+// RecordAudit records an audit event outside a scenario write transaction,
+// for example an approval that was rejected before any state changed.
+func (r *LayoutScenarioRepository) RecordAudit(ctx context.Context, entry audit.Entry) error {
+	return r.audit.Record(ctx, entry)
 }

@@ -62,6 +62,30 @@ func (r *EquipmentLoadRepository) FindByIDs(ctx context.Context, ids []uint) ([]
 	return loads, nil
 }
 
+// ExistingByIDs returns the loads that still exist, preserving the order of
+// ids. Deleted loads are simply omitted so snapshot drift detection can flag
+// them as removed instead of failing the request.
+func (r *EquipmentLoadRepository) ExistingByIDs(ctx context.Context, ids []uint) ([]model.EquipmentLoad, error) {
+	if len(ids) == 0 {
+		return []model.EquipmentLoad{}, nil
+	}
+	var loads []model.EquipmentLoad
+	if err := r.db.WithContext(ctx).Where("id IN ?", ids).Find(&loads).Error; err != nil {
+		return nil, fmt.Errorf("find equipment loads: %w", err)
+	}
+	byID := make(map[uint]model.EquipmentLoad, len(loads))
+	for _, load := range loads {
+		byID[load.ID] = load
+	}
+	ordered := make([]model.EquipmentLoad, 0, len(loads))
+	for _, id := range ids {
+		if load, ok := byID[id]; ok {
+			ordered = append(ordered, load)
+		}
+	}
+	return ordered, nil
+}
+
 func (r *EquipmentLoadRepository) Get(ctx context.Context, id uint) (model.EquipmentLoad, error) {
 	var load model.EquipmentLoad
 	if err := r.db.WithContext(ctx).Preload("PreferredZone").First(&load, id).Error; err != nil {
